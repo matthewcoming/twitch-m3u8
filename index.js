@@ -16,7 +16,13 @@ function get(url) {
     });
 }
 
-function getAcessToken(id, vod) {
+function getPlaylistURL(id, accessToken, vod) {
+  return new Promise(resolve => {
+    resolve(`https://usher.ttvnw.net/${vod ? 'vod' : 'api/channel/hls'}/${id}.m3u8?client_id=${clientId}&token=${accessToken.token}&sig=${accessToken.sig}&allow_source&allow_audio_only`);
+  });
+}
+
+function getAccessToken(id, vod) {
     return new Promise((resolve, reject) => {
         get(`https://api.twitch.tv/api/${vod ? 'vods' : 'channels'}/${id}/access_token?client_id=${clientId}`)
             .then((data) => {
@@ -30,9 +36,9 @@ function getAcessToken(id, vod) {
     });
 }
 
-function getPlaylist(id, accessToken, vod) {
+function getPlaylist(url) {
     return new Promise((resolve, reject) => {
-        get(`https://usher.ttvnw.net/${vod ? 'vod' : 'api/channel/hls'}/${id}.m3u8?client_id=${clientId}&token=${accessToken.token}&sig=${accessToken.sig}&allow_source&allow_audio_only`)
+        get(url)
             .then((data) => {
                 switch (data.statusCode) {
                     case 200:
@@ -63,10 +69,18 @@ function parsePlaylist(playlist) {
     return parsedPlaylist;
 }
 
+function getURL(id, vod) {
+  return new Promise(resolve => {
+    getAccessToken(id, vod)
+      .then((accessToken) => resolve(getPlaylistURL(id, accessToken, vod)))
+      .catch(error => reject(error));
+  });
+}
+
 function getStream(channel, raw) {
     return new Promise((resolve, reject) => {
-        getAcessToken(channel)
-            .then((accessToken) => getPlaylist(channel, accessToken))
+        getURL(channel, false)
+            .then((url) => getPlaylist(url))
             .then((playlist) => resolve((raw ? playlist : parsePlaylist(playlist))))
             .catch(error => reject(error));
     });
@@ -74,8 +88,8 @@ function getStream(channel, raw) {
 
 function getVod(vid, raw) {
     return new Promise((resolve, reject) => {
-        getAcessToken(vid, true)
-            .then((accessToken) => getPlaylist(vid, accessToken, true))
+        getURL(vid, true)
+            .then((url) => getPlaylist(url))
             .then((playlist) => resolve((raw ? playlist : parsePlaylist(playlist))))
             .catch(error => reject(error));
     });
@@ -85,6 +99,7 @@ module.exports = function (cid) {
     clientId = cid;
     return {
         getStream: getStream,
-        getVod: getVod
+        getVod: getVod,
+        getURL: getURL
     };
 };
