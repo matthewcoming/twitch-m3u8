@@ -10,7 +10,7 @@
 ## Installation
 [Node.js](https://nodejs.org/en/) required
 ```bash
-npm install twitch-m3u8
+npm install git+https://github.com/matthewcoming/twitch-m3u8.git
 ```
 
 ## Usage
@@ -20,8 +20,19 @@ Functions getStream and getVod have an optional second boolean parameter which d
 true - function returns raw .m3u8 data  
 false - function returns an array of JSON objects containing the quality, resolution and URL of the stream  
 ```js
-// replace clientID with your Twitch Client ID
-const twitch = require('twitch-m3u8')(clientID);
+// go ahead and use this id, seems to work ¯\_(ツ)_/¯ 
+const twitch = require('twitch-m3u8')('kimne78kx3ncx6brgo4mv6wki5h1ko');
+
+// returns a string url to the m3u8 file for a vod
+// useful for ffmpeg or gstreamer pipelines without writing a to a file
+twitch.getURL(vodID, true)
+.then(data => console.log(data))
+.catch(err => console.error(err));
+
+// returns a string url to the m3u8 file for a stream
+twitch.getURL(stramer, false)
+.then(data => console.log(data))
+.catch(err => console.error(err));
 
 // returns a JSON object containing available streams of a livestream
 twitch.getStream(streamer)
